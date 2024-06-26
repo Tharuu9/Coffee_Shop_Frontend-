@@ -11,22 +11,54 @@
 @tailwind utilities;
 
 @layer components {
-    .sidebar-icon{
+    .sidebar-icon {
         @apply transition-all duration-300 ease-linear
     }
+
     .animation-btn {
         @apply transition: all 0.5s;
     }
-    .toast-class{
+
+    .toast-class {
         @apply h-full px-0 py-0 w-full
     }
-    .toast-body{
+
+    .toast-body {
         @apply h-full m-0 p-0 w-full
     }
+
 }
 
+.swal-popup {
+    border-radius: 15px ;
+    width: 400px;
+    padding: 20px 0;
+}
+
+.swal-confirm {
+    background: #2c2c2c !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+.swal-cancel {
+    background: #c8c8c8 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+.swal-title{
+    padding: 0 0 20px 0;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+.swal-update{
+    background: #FFA16C!important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
 .Toastify__close-button {
-    @apply w-4 h-4 my-5 mx-1; /* Apply Tailwind utility classes */
+    @apply w-4 h-4 my-5 mx-1;
+    /* Apply Tailwind utility classes */
 }
 
 .animate2 {
@@ -34,7 +66,7 @@
     opacity: 0.5;
 }
 
-.animation{
+.animation {
     transition: all 0.5s;
 }
 

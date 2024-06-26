@@ -3,7 +3,7 @@ import {AiOutlineAppstore} from "react-icons/ai";
 import {RiHome6Line,} from "react-icons/ri";
 import { BsPersonAdd } from "react-icons/bs";
 import {TiDocumentText} from "react-icons/ti";
-import {HiOutlineLogout} from "react-icons/hi";
+import { IoPowerSharp } from "react-icons/io5";
 import {PiCoffee} from "react-icons/pi";
 import {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
@@ -80,10 +80,10 @@ const NavBar = (): JSX.Element => {
                     </Link>
 
                 </ul>
-                <Link to={'/login'}>
+                <Link to={'/login'} className={'cursor-default'}>
                     <div
-                        className={`w-full absolute bottom-[40px] flex items-center cursor-pointer justify-center text-gray-400 rotate-180`}>
-                        <HiOutlineLogout className="text-lg hover:text-white"/>
+                        className={`w-full absolute bottom-[40px] flex items-center  justify-center text-gray-400 rotate-180`}>
+                        <IoPowerSharp className="rotate-180 w-8 h-8 px-1.5 rounded-lg ease-in-out hover:bg-red-700 hover:bg-opacity-20 cursor-pointer transition-all duration-200 text-lg hover:text-red-700 "/>
                     </div>
                 </Link>
             </nav>

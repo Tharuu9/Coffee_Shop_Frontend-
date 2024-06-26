@@ -3,6 +3,9 @@ import CustomInput from "../../input/customInput.tsx";
 import {forwardRef, useImperativeHandle, useReducer, useRef, useState} from "react";
 import * as validator from "../../../util/validator.ts";
 import axios from "axios";
+// @ts-ignore
+import Cookies from "js-cookie";
+import {useNavigate} from "react-router-dom";
 import Swal from "sweetalert2";
 
 interface Data {
@@ -97,14 +100,16 @@ const formFieldSetReducer = (state: FormState, action: FormFieldSetAction): Form
 interface Props {
     onLoadAction: () => void;
     onSetDessert: (dessert: Data) => void;
+    showTosty: (title: string, message: string) => void;
 }
 
 const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
 
     const [dessertImg, setDessertImg] = useState<any>('');
     const [oldDessertImg, setOldDessertImg] = useState<string>('');
-    const fileInputRef = useRef();
+    const fileInputRef = useRef<any>();
     const [dessertState, setDessertState] = useState<'Add' | 'Update'>("Add");
+    const navigate = useNavigate();
 
     useImperativeHandle(ref, () => {
         return {
@@ -130,6 +135,28 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
         setDessertImg(event.target.files[0]);
     };
 
+    const getToken = (): string | null => {
+        const token = Cookies.get('token');
+        if (!token) {
+            Swal.fire({
+                title: "Login expire !",
+                text: "Please log in to continue!",
+                showCancelButton: false,
+                confirmButtonText: "OK!",
+                customClass: {
+                    title: 'swal-title',
+                    popup: 'swal-popup',
+                    confirmButton: 'swal-confirm',
+                    cancelButton: 'swal-cancel'
+                }
+            });
+            navigate('/login');
+            return null;
+        } else {
+            return token;
+        }
+    }
+
     const [state, dispatch] = useReducer<(state: FormState, action: FormFieldSetAction) => FormState>(
         formFieldSetReducer,
         {
@@ -154,22 +181,20 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
         }
     );
 
-    const isEmpty = (): void => {
-
-        if (state.dessertName) {
-
-            dispatch({formFieldName: 'dessert', formFieldValue: 'value'})
-            console.log("wadwa")
-            state.dessertNameError = "aaaaa";
-
-            console.log(state.dessertNameError)
-        }
-    }
-
     const handleAddDessert = () => {
+
+        if (dessertImg === null || dessertImg === '') {
+            props.showTosty('Warning', 'Image cannot be empty')
+            return;
+        }
+
+        const token = getToken();
+        if (token === null)
+            return;
 
         const config = {
             headers: {
+                'Authorization': token,
                 'Content-Type': 'multipart/form-data',
             }
         };
@@ -192,28 +217,24 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
             .then(res => {
                 clearAll();
                 props.onLoadAction();
-                Swal.fire({
-                    title: "Success !",
-                    text: res.data.message,
-                    icon: "success"
-                });
+                props.showTosty('Success', res.data.message);
 
             })
             .catch(err => {
                 console.log(err)
-                Swal.fire({
-                    title: err.response.data.status,
-                    text: err.response.data.message,
-                    icon: 'error',
-                    confirmButtonText: 'Cool'
-                })
+                props.showTosty('Error', err.response.data.message);
             });
     }
 
     const handleUpdateDessert = () => {
 
+        const token = getToken();
+        if (token === null)
+            return;
+
         const config = {
             headers: {
+                'Authorization': token,
                 'Content-Type': 'multipart/form-data',
             }
         };
@@ -235,27 +256,23 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
             .then(res => {
                 clearAll();
                 props.onLoadAction();
-                Swal.fire({
-                    title: "Success !",
-                    text: res.data.message,
-                    icon: "success"
-                });
+                props.showTosty('Success', res.data.message);
             })
             .catch(err => {
                 console.log(err)
-                Swal.fire({
-                    title: err.response.data.status,
-                    text: err.response.data.message,
-                    icon: 'error',
-                    confirmButtonText: 'Cool'
-                })
+                props.showTosty('Error', err.response.data.message);
             });
     }
 
     const handleUpdateDessertWithoutImg = () => {
 
+        const token = getToken();
+        if (token === null)
+            return;
+
         const config = {
             headers: {
+                'Authorization': token,
                 'Content-Type': 'application/json',
             }
         };
@@ -273,28 +290,36 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
             .then(res => {
                 clearAll();
                 props.onLoadAction();
-                Swal.fire({
-                    title: "Success !",
-                    text: res.data.message,
-                    icon: "success"
-                });
+                props.showTosty('Success', res.data.message);
             })
             .catch(err => {
                 console.log(err)
-                Swal.fire({
-                    title: err.response.data.status,
-                    text: err.response.data.message,
-                    icon: 'error',
-                    confirmButtonText: 'Cool'
-                })
+                props.showTosty('Error', err.response.data.message);
             });
     }
 
     const handleValidation = () => {
 
-        /*if (state.coffeeNameError === null && state.descriptionError === null && state.largeSizeError ===
-            null && state.smallSizeError === null && state.qtyError === null) {*/
-
+        if (state.dessertName === null || state.dessertName === '') {
+            props.showTosty('Warning', 'Name cannot be empty')
+            return;
+        }
+        if (state.description === null || state.description === '') {
+            props.showTosty('Warning', 'Description cannot be empty')
+            return;
+        }
+        if (state.size === null || state.size === '') {
+            props.showTosty('Warning', 'Size cannot be empty')
+            return;
+        }
+        if (state.price === null || state.price === '') {
+            props.showTosty('Warning', 'Price cannot be empty')
+            return;
+        }
+        if (state.qty === null || state.qty === '') {
+            props.showTosty('Warning', 'Quantity cannot be empty')
+            return;
+        }
         if (dessertState === "Add") {
             handleAddDessert();
         } else {
@@ -304,7 +329,6 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
                 handleUpdateDessertWithoutImg();
             }
         }
-        //}
     }
 
     const clearAll = () => {
@@ -345,7 +369,6 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
                     type={'text'}
                     name={'Dessert'}
                     placeholder={'Cheesecake...'}
-                    errorMsg={state.dessertNameError}
                     callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
 
                 <CustomInput
@@ -353,7 +376,6 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
                     type={'text'}
                     name={'Desc'}
                     placeholder={'Description for flavours.. '}
-                    errorMsg={state.descriptionError}
                     callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
 
                 <div className={'row'}>
@@ -363,7 +385,6 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
                             type={'number'}
                             name={'Size'}
                             placeholder={'100g'}
-                            errorMsg={state.sizeError}
                             callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
                     </div>
                     <div className={'col-md-6'}>
@@ -372,7 +393,6 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
                             type={'number'}
                             name={'Price'}
                             placeholder={'00.00'}
-                            errorMsg={state.priceError}
                             callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
                     </div>
                 </div>
@@ -381,7 +401,6 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
                     type={'number'}
                     name={'Qty'}
                     placeholder={'10'}
-                    errorMsg={state.qtyError}
                     callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
 
                 <div className={'w-full flex items-center justify-content-evenly py-4 font-cde text-[13px]'}>
@@ -394,19 +413,6 @@ const AddDessert = forwardRef((props: Props, ref): JSX.Element => {
                         className={`py-2 w-28 transition-all duration-200 bg-[#454545] rounded hover:bg-[#2c2c2c] hover:text-white text-white active:bg-[#fc4f13]`}>{dessertState}
                     </button>
                 </div>
-                {/*<button
-                    onClick={handleValidation}
-                    className={`w-full h-[40px] font-round text-sm bg-[#3C3C3C] ` +
-                        `hover:bg-[#5d5d5d] text-white rounded-full my-2 ` +
-                        `active:bg-[#262626]`}>{dessertState}
-                </button>
-
-                <button
-                    onClick={() => clearAll()}
-                    className={`w-full h-[38px] font-round text-sm  ` +
-                        ` border-[1px] border-gray-400 rounded-full  ` +
-                        `active:bg-[#b0b0b0]`}>Clear All
-                </button>*/}
             </div>
         </section>
     );

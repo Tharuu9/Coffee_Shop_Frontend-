@@ -1,75 +1,290 @@
 import Input from "../components/input/input.tsx";
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
+import * as validator from '../util/validator.ts'
+import toast, {Toaster} from 'react-hot-toast'
+import axios from "axios";
+// @ts-ignore
+import Cookies from "js-cookie"
 
-interface Props{
-    setIsLogged: (log:boolean) => void;
+interface Props {
+    setIsLogged: (log: boolean) => void;
 }
 
-const Login = (props:Props): JSX.Element => {
+const Login = (props: Props): JSX.Element => {
 
-    const [isLogin, setIsLogin] = useState(false);
     const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [fName, setFName] = useState('');
+    const [lName, setLName] = useState('');
+    const [confirmPass, setConfirmPass] = useState('');
+    const [loginState, setLoginState] = useState(true)
 
-    const handleLogin = () => {
-        props.setIsLogged(true);
-        navigate('/');
+    const login = async () => {
+        const config = {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        let data = JSON.stringify({
+            email: email,
+            password: password
+        })
+        console.log(data)
+
+        await axios.post('http://localhost:8080/user/auth', data, config)
+            .then(res => {
+                Cookies.set('token', res.data.data.accessToken, { expires: 7 })
+                Cookies.set('user', JSON.stringify(res.data.data.user), { expires: 7 })
+                props.setIsLogged(true)
+                navigate('/');
+                console.log(res)
+            });
     }
 
+    const handleLogin = () => {
+        toast.promise(
+            login(),
+            {
+                loading: 'Login',
+                success: <b>{'Login successful'}</b>,
+                error: (err) => <b>{err.response.data.message}</b>,
+            }
+        );
+    }
+
+    const handleInput = (e: any, type: string): void => {
+
+        switch (type) {
+            case 'Email':
+                setEmail(e.target.value)
+                break;
+            case 'First name':
+                setFName(e.target.value)
+                break;
+                case 'Last name':
+                setLName(e.target.value)
+                break;
+            case 'Password':
+                setPassword(e.target.value)
+                break;
+                case 'Confirm Password':
+                setConfirmPass(e.target.value)
+                break;
+        }
+    }
+
+    const handleValidate = (): void => {
+
+        if (email === '' || password === '') {
+            return;
+        }
+        if (!validator.validateEmail(email)) {
+            toast.error("Invalid Email.");
+            return;
+        }
+        if (!validator.validatePassword(password)) {
+            toast.error("Invalid Password.");
+            return;
+        }
+        handleLogin();
+    }
+
+    const handleUpdateValidate = (): void => {
+
+        if (!validator.validateEmail(email)) {
+            toast.error("Invalid Email.");
+            return;
+        }
+        if (!validator.validateName(fName)) {
+            toast.error("Invalid first name.");
+            return;
+        }
+        if (!validator.validateName(lName)) {
+            toast.error("Invalid last name.");
+            return;
+        }
+        if (!validator.validatePassword(password)) {
+            toast.error("Invalid Password.");
+            return;
+        }
+        if (password !== confirmPass) {
+            toast.error("Password don't match.");
+            return;
+        }
+        signUp();
+    }
+
+    const signUp = () => {
+
+        const config = {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        let data = JSON.stringify({
+            fname:fName,
+            lname:lName,
+            email:email,
+            password:password
+        })
+
+        axios.post('http://localhost:8080/user', data, config )
+            .then(res => {
+                toast.success(res.data.message);
+                Cookies.set('token', res.data.data.accessToken, { expires: 7 })
+                Cookies.set('user', JSON.stringify(res.data.data.user), { expires: 7 })
+                props.setIsLogged(true)
+                navigate('/');
+            })
+            .catch(err => {
+                toast.error(err.response.data.message);
+            });
+    }
+
+    const selectOption = () => {
+        setLoginState(!loginState);
+        clear();
+    }
+
+    const clear = () => {
+        setEmail('');
+        setPassword('');
+        setFName('');
+        setLName('');
+        setConfirmPass('');
+    }
     return (
         <section
-            className={'w-full h-[100vh] flex justify-center items-center bg-[url(src/assets/pexels-ian-frallon-pictures-3289960.jpg)]'}>
-            <div
-                className={`w-[60vw] h-[85vh] border-[1px] border-gray-400 p-3 flex bg-white  ${isLogin && 'flex-row-reverse'} `}>
-                <div
-                    className={`w-[40%] h-full bg-[url(src/assets/pexels-ian-frallon-pictures-3289960.jpg)] bg-cover overflow-hidden`}>
-                    <div className={'font-round mt-10 mx-5 text-3xl text-gray-400 '}>
-                        <h1 className={'text-lg'}>King's Row coffee</h1>
-                        <h1 className={'font-bold'}>Your instant choice </h1>
-                        <div className={'font-bold text-[10rem] leading-[150px] opacity-[0.2]'}>
-                            <h1>R</h1>
-                            <h1>O</h1>
-                            <h1>W</h1>
-                        </div>
-                    </div>
-                </div>
-                <div className={'w-[60%] h-full px-20 pt-20 '}>
-                    <h1 className={'font-round text-[1.6rem] font-[600] text-gray-600 my-1'}>Welcome to King's Row
-                        System</h1>
-                    <h1 className={'font-round text-[14px] text-gray-500'}>Please log in to your account</h1>
-                    <div className={'mt-16 '}>
-                        <Input
-                            id={1} option={false}
-                            type={'text'}
-                            name={'Email'}
-                            placeholder={"Please enter your email"}
-                            errorMsg={""}
-                        />
-                    </div>
-                    <div className={'mt-1.5'}>
-                        <Input
-                            id={2} option={false}
-                            type={'password'}
-                            name={'Password'}
-                            placeholder={"Please enter your password"}
-                            errorMsg={""}
-                        />
-                    </div>
+            className={'row w-full h-[100vh]'}>
+            <Toaster
+                position="top-center"
+                reverseOrder={false}
+            />
+            <div className={'col-md-8 bg-[#FFA16C] bg-opacity-50 flex items-center justify-content-center'}>
+                <img src="src/assets/9462908_35973-removebg-preview.png" alt="login image" className={'w-80'}/>
+            </div>
+            <div className={'col-md-4 bg-white px-[85px] '}>
+                {
+                    loginState ?
+                        <div className={'py-[130px]'}>
+                            <div>
+                                <h1 className={'font-pop m-0 text-[1.6rem] font-[500] text-gray-700 my-1'}>
+                                    Welcome to King's Row System</h1>
+                                <h1 className={'font-round mt-4 text-[13px] font-[400] text-gray-400'}>Please log in to your
+                                    account</h1>
+                                <div className={'pl-2 pr-4 py-3'}>
 
-                    <div className={'w-[10vw] mt-2'}>
-                        <button
-                            className={'w-full h-[45px] font-round text-sm bg-[#ffa16c] text-white rounded-3xl my-1 active:bg-[#fe7439] '}
-                            onClick={() => handleLogin()}>
-                            Log in
-                        </button>
-                    </div>
-                    <h1 className={'mt-14 font-round text-sm text-gray-400 cursor-default '}>Don't have a Row account ?
-                        <span className={'underline ml-1 cursor-pointer text-blue-500 active:text-red-500'}> Register now </span>
-                    </h1>
-                </div>
+                                    <Input
+                                        value={email}
+                                        id={1}
+                                        type={'email'}
+                                        name={'Email'}
+                                        placeholder={"example@gmail.com"}
+                                        callBack={handleInput}/>
+
+                                    <Input
+                                        value={password}
+                                        id={2}
+                                        type={'password'}
+                                        name={'Password'}
+                                        placeholder={".........."}
+                                        callBack={handleInput}/>
+                                </div>
+                            </div>
+                            <button
+                                className={'transition-all duration-200 hover:shadow-[0_10px_20px_rgba(255,_161,_108,_0.4)] w-full py-[10px] font-round text-sm bg-[#ffa16c] text-white rounded-lg active:bg-[#fe7439] '}
+                                onClick={() => handleValidate()}>
+                                Log in
+                            </button>
+                            <div className={'py-8 flex flex-col'}>
+                                <div className={'w-full flex items-center justify-center'}>
+                                    <hr className={'w-full border-gray-400'}></hr>
+                                    <span className={'text-sm font-round text-gray-500 px-2 pb-1'}>or</span>
+                                    <hr className={'w-full border-gray-400'}></hr>
+                                </div>
+                                <div className={'w-full flex items-center text-sm  justify-center'}>
+                                    <h1 className={'mt-2 font-round text-gray-400 cursor-default '}>New on our platform ?
+                                        <span onClick={selectOption} className={'ml-1 cursor-pointer text-[#ffa16c] active:text-red-500'}> Create an account </span>
+                                    </h1>
+                                </div>
+                            </div>
+                        </div>
+                        :
+                        <div>
+                            <div className={'pt-[90px]'}>
+                                <h1 className={'font-pop m-0 text-[1.6rem] font-[500] text-gray-700 my-1'}>
+                                    Welcome to King's Row System</h1>
+                                <h1 className={'font-round mt-4 text-[13px] font-[400] text-gray-400'}>Please Sign up in here</h1>
+                                <div className={'pl-2 pr-4 py-3'}>
+
+                                    <Input
+                                        value={email}
+                                        id={1}
+                                        type={'email'}
+                                        name={'Email'}
+                                        placeholder={"example@gmail.com"}
+                                        callBack={handleInput}/>
+                                    <div className={'row'}>
+                                        <div className={'col-md-6 pr-4'}>
+                                            <Input
+                                                value={fName}
+                                                id={2}
+                                                type={'text'}
+                                                name={'First name'}
+                                                placeholder={"example@gmail.com"}
+                                                callBack={handleInput}/>
+                                        </div>
+                                        <div className={'col-md-6 pl-4'}>
+                                            <Input
+                                                value={lName}
+                                                id={3}
+                                                type={'text'}
+                                                name={'Last name'}
+                                                placeholder={"example@gmail.com"}
+                                                callBack={handleInput}/>
+                                        </div>
+                                    </div>
+                                    <Input
+                                        value={password}
+                                        id={4}
+                                        type={'password'}
+                                        name={'Password'}
+                                        placeholder={".........."}
+                                        callBack={handleInput}/>
+                                    <Input
+                                        value={confirmPass}
+                                        id={5}
+                                        type={'password'}
+                                        name={'Confirm Password'}
+                                        placeholder={".........."}
+                                        callBack={handleInput}/>
+                                </div>
+                            </div>
+                            <button
+                                className={'transition-all duration-200 hover:shadow-[0_10px_20px_rgba(255,_161,_108,_0.4)] w-full py-[10px] font-round text-sm bg-[#ffa16c] text-white rounded-lg active:bg-[#fe7439] '}
+                                onClick={() => handleUpdateValidate()}>
+                                Sign up
+                            </button>
+                            <div className={'py-8 flex flex-col'}>
+                                <div className={'w-full flex items-center justify-center'}>
+                                    <hr className={'w-full border-gray-400'}></hr>
+                                    <span className={'text-sm font-round text-gray-500 px-2 pb-1'}>or</span>
+                                    <hr className={'w-full border-gray-400'}></hr>
+                                </div>
+                                <div className={'w-full flex items-center text-sm  justify-center'}>
+                                    <h1 className={'mt-2 font-round text-gray-400 cursor-default '}>Already have an account ?
+                                        <span onClick={selectOption} className={'ml-1 cursor-pointer text-[#ffa16c] active:text-red-500'}>Sign in your account </span>
+                                    </h1>
+                                </div>
+                            </div>
+                        </div>
+                }
             </div>
         </section>
     );
 }
-
 export default Login;

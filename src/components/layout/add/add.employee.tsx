@@ -1,8 +1,11 @@
 import {GrUpload} from "react-icons/gr";
 import Input from "../../input/input.tsx";
-import {createRef, forwardRef, useImperativeHandle, useRef, useState} from "react";
+import {forwardRef, useImperativeHandle, useRef, useState} from "react";
 import * as validator from "../../../util/validator.ts";
 import axios from "axios";
+// @ts-ignore
+import Cookies from "js-cookie";
+import {useNavigate} from "react-router-dom";
 import Swal from "sweetalert2";
 
 
@@ -19,21 +22,23 @@ interface Data {
 interface Props {
     onLoadAction: () => void;
     onSetEmployee: (Employee: Data) => void;
+    showTosty: (title: string, message: string) => void;
 }
 
-const AddEmployee = forwardRef((props: Props, ref):JSX.Element => {
+const AddEmployee = forwardRef((props: Props, ref): JSX.Element => {
 
-    const [oldImage, setOldImage] = useState<File | string>('');
+    const [oldImage, setOldImage] = useState<File | string | any>('');
     const [image, setImage] = useState<any>('');
-    const fileInputRef = useRef();
-    const [errorSate, setErrorSate] = useState([false, false, false, false, false]);
+    const fileInputRef = useRef<any>();
+    // const [errorSate, setErrorSate] = useState([false, false, false, false, false]);
     const [id, setId] = useState<string | null>(null);
     const [name, setName] = useState<string>('');
     const [mail, setMail] = useState<string>('');
     const [address, setAddress] = useState<string>('');
     const [age, setAge] = useState<number | string>('');
     const [contact, setContact] = useState<string>('');
-    const [employeeState, setEmployeeState] = useState<'Save' | 'Update'>( "Save");
+    const [employeeState, setEmployeeState] = useState<'Save' | 'Update'>("Save");
+    const navigate = useNavigate();
 
 
     useImperativeHandle(ref, () => {
@@ -57,12 +62,32 @@ const AddEmployee = forwardRef((props: Props, ref):JSX.Element => {
         // @ts-ignore
         fileInputRef?.current?.click();
     };
-
-    // Function to handle file selection
     const handleFileChange = (event: any) => {
         setOldImage('')
         setImage(event.target.files[0]);
     };
+
+    const getToken = (): string | null => {
+        const token = Cookies.get('token');
+        if (!token) {
+            Swal.fire({
+                title: "Login expire !",
+                text: "Please log in to continue!",
+                showCancelButton: false,
+                confirmButtonText: "OK!",
+                customClass: {
+                    title: 'swal-title',
+                    popup: 'swal-popup',
+                    confirmButton: 'swal-confirm',
+                    cancelButton: 'swal-cancel'
+                }
+            });
+            navigate('/login');
+            return null;
+        } else {
+            return token;
+        }
+    }
 
     const handleInput = (e: any, type: string): void => {
 
@@ -111,41 +136,30 @@ const AddEmployee = forwardRef((props: Props, ref):JSX.Element => {
         }
     }
 
-    const showError = (index: number) => {
-
-        setErrorSate(prevState => {
-            const newArray = [...prevState];
-            newArray[index] = true;
-            return newArray;
-        });
-    }
-
     const handleValidation = (): boolean => {
 
-        setErrorSate([false, false, false, false, false]);
-
         if (!validator.validateName(name)) {
-            showError(0);
+            props.showTosty('Warning', 'Name cannot be empty')
             return false;
         }
 
         if (!validator.validateEmail(mail)) {
-            showError(1);
+            props.showTosty('Warning', 'Invalid email or cannot be empty')
             return false;
         }
 
         if (!validator.validateAddress(address)) {
-            showError(2);
+            props.showTosty('Warning', 'Invalid address or cannot be empty')
             return false;
         }
 
         if (!validator.validateAge(+age)) {
-            showError(3);
+            props.showTosty('Warning', 'Invalid age or cannot be empty')
             return false;
         }
 
         if (!validator.validateContact(contact)) {
-            showError(4);
+            props.showTosty('Warning', 'Invalid contact or cannot be empty')
             return false;
         }
         return true;
@@ -153,14 +167,19 @@ const AddEmployee = forwardRef((props: Props, ref):JSX.Element => {
 
     const handleUpdateEmployee = () => {
 
+        const token = getToken();
+        if (token === null)
+            return;
+
         if (image) {
             const config = {
                 headers: {
+                    'Authorization': token,
                     'Content-Type': 'multipart/form-data',
                 }
             };
             let data = JSON.stringify({
-                _id:id,
+                _id: id,
                 name: name,
                 email: mail,
                 address: address,
@@ -178,24 +197,16 @@ const AddEmployee = forwardRef((props: Props, ref):JSX.Element => {
                 .then(res => {
                     clearAll();
                     props.onLoadAction();
-                    Swal.fire({
-                        title: "Success !",
-                        text: res.data.message,
-                        icon: "success"
-                    });
+                    props.showTosty('Success', res.data.message);
                 })
                 .catch(err => {
                     console.log(err)
-                    Swal.fire({
-                        title: err.response.data.status,
-                        text: err.response.data.message,
-                        icon: 'error',
-                        confirmButtonText: 'Cool'
-                    })
+                    props.showTosty('Error', err.response.data.message);
                 });
         } else {
             const config = {
                 headers: {
+                    'Authorization': token,
                     'Content-Type': 'application/json',
                 }
             };
@@ -212,29 +223,29 @@ const AddEmployee = forwardRef((props: Props, ref):JSX.Element => {
                 .then(res => {
                     clearAll();
                     props.onLoadAction();
-                    Swal.fire({
-                        title: "Success !",
-                        text: res.data.message,
-                        icon: "success"
-                    });
+                    props.showTosty('Success', res.data.message);
                 })
                 .catch(err => {
                     console.log(err)
-                    Swal.fire({
-                        title: err.response.data.status,
-                        text: err.response.data.message,
-                        icon: 'error',
-                        confirmButtonText: 'Cool'
-                    })
+                    props.showTosty('Error', err.response.data.message);
                 });
         }
     }
 
     const handleAddEmployee = () => {
 
-        //  'Authorization': Cookies.get('token')
+        if (image === null || image === '') {
+            props.showTosty('Warning', 'Image cannot be empty')
+            return;
+        }
+
+        const token = getToken();
+        if (token === null)
+            return;
+
         const config = {
             headers: {
+                'Authorization': token,
                 'Content-Type': 'multipart/form-data',
             }
         };
@@ -260,21 +271,12 @@ const AddEmployee = forwardRef((props: Props, ref):JSX.Element => {
             .then(res => {
                 clearAll();
                 props.onLoadAction();
-                Swal.fire({
-                    title: "Success !",
-                    text: res.data.message,
-                    icon: "success"
-                });
+                props.showTosty('Success', res.data.message);
 
             })
             .catch(err => {
                 console.log(err)
-                Swal.fire({
-                    title: err.response.data.status,
-                    text: err.response.data.message,
-                    icon: 'error',
-                    confirmButtonText: 'Cool'
-                })
+                props.showTosty('Error', err.response.data.message);
             });
     }
 
@@ -293,33 +295,43 @@ const AddEmployee = forwardRef((props: Props, ref):JSX.Element => {
                             <GrUpload className={'text-2xl'}/></div>
                 }
 
-                <input type={"file"} className={'hidden'} ref ={fileInputRef} onChange={handleFileChange}/>
+                <input type={"file"} className={'hidden'} ref={fileInputRef} onChange={handleFileChange}/>
             </div>
             <div className={'px-8 pt-[10px]'}>
-                <Input id={0} value={name} type={'text'} name={'Name'} placeholder={'Insert your name'}
-                       errorMsg={"Name must be 3-16 characters and shouldn' t include special characters."}
-                       option={errorSate[0]}
+                <Input id={0}
+                       value={name}
+                       type={'text'}
+                       name={'Name'}
+                       placeholder={'Ryen rod'}
                        callBack={handleInput}/>
-                <Input id={1} value={mail} type={'email'} name={'Email'} placeholder={'Insert your mail'}
-                       errorMsg={"It should be valid email address."}
-                       option={errorSate[1]}
+                <Input id={1}
+                       value={mail}
+                       type={'email'}
+                       name={'Email'}
+                       placeholder={'example@gnail,com'}
                        callBack={handleInput}/>
-                <Input id={2} value={address} type={'text'} name={'Address'} placeholder={'Address'}
-                       errorMsg={"Address must be 3-25 characters."}
-                       option={errorSate[2]}
-                       callBack={handleInput}/>
-                <Input id={3} value={age} type={'number'} name={'Age'} placeholder={'your age'}
-                       errorMsg={"Age must greater than 17 and 50 less than."}
-                       option={errorSate[3]}
-                       callBack={handleInput}/>
-                <Input id={4} value={contact} type={'tel'} name={'Contact'} placeholder={'phone number'}
-                       errorMsg={"Phone number must be 10 characters and shouldn' t include special characters."}
-                       option={errorSate[4]}
-                       callBack={handleInput}/>
+                <Input
+                    id={2}
+                    value={address}
+                    type={'text'}
+                    name={'Address'}
+                    placeholder={'No .15 Colombo'}
+                    callBack={handleInput}/>
+                <div className={'row'}>
+                    <div className={'col-md-4'}>
+                        <Input id={3} value={age} type={'number'} name={'Age'} placeholder={'25'}
+                               callBack={handleInput}/>
+                    </div>
+                    <div className={'col-md-8 pl-5'}>
+                        <Input id={4} value={contact} type={'tel'} name={'Contact'} placeholder={'phone number'}
+                               callBack={handleInput}/>
+                    </div>
+                </div>
                 <div className={'w-full flex items-center justify-content-evenly py-4 font-cde text-[13px]'}>
                     <button
                         onClick={() => clearAll()}
-                        className={`py-2 w-28 transition-all duration-200 hover: active:text-white active:bg-gray-700 hover:bg-gray-300 bg-gray-200 text-gray-500 rounded`}>Dismiss All
+                        className={`py-2 w-28 transition-all duration-200 hover: active:text-white active:bg-gray-700 hover:bg-gray-300 bg-gray-200 text-gray-500 rounded`}>Dismiss
+                        All
                     </button>
                     <button
                         onClick={handleEmployee}

@@ -5,7 +5,6 @@ import EmptyOrderItem from "../components/component/empty/empty.order.item.tsx";
 import AddOrder from "../components/layout/add/add.order.tsx";
 import {toast, ToastContainer} from "react-toastify";
 import * as ToastUtil from "../util/toastUtil.tsx";
-import { animated, useSpring } from '@react-spring/web'
 
 
 
@@ -110,6 +109,7 @@ const Menu = (): JSX.Element => {
     }
 
     const addItemForCart = (data:CartData) => {
+        // @ts-ignore
         orderCartRef?.current?.setData(data);
     }
 
@@ -118,8 +118,6 @@ const Menu = (): JSX.Element => {
         toast.dismiss(toastId.current);
         toastId.current = ToastUtil.error(title, message);
     }
-
-
 
     return (
         <section className={'w-full h-full flex bg-white'}>
@@ -130,25 +128,37 @@ const Menu = (): JSX.Element => {
                     <h4 className={'text-[12px] text-gray-400'}>Good morning kasun. You 4 pending orders .</h4>
                 </div>
                 {/*nav*/}
-                <div className={'w-full h-10 px-10'}>
+                <div className={'mx-10 border-[1px] w-fit border-gray-300 bg-gray-100 rounded-lg text-gray-500 text-[13px] font-cde'}>
+                        <button onClick={() => showMenu(0)}
+                            type={'button'} className={`py-2 w-[70px] border-r-[1px] border-gray-300 transition-all ease-linear duration-200 delay-100
+                            ${options[0] && 'w-[85px] text-white bg-[#2c2c2c] rounded-lg shadow-[rgba(0,_0,_0,_0.24)_0px_3px_8px]'}`}>All</button>
+                        <button onClick={() => showMenu(1)}
+                            type={'button'} className={`py-2 w-[70px] transition-all ease-linear duration-200 delay-100
+                            ${options[1] && 'w-[85px] text-white bg-[#2c2c2c] rounded-lg shadow-[rgba(0,_0,_0,_0.24)_0px_3px_8px]'}`}>Coffee</button>
+                        <button onClick={() => showMenu(2)}
+                            type={'button'}
+                            className={`py-2 w-[70px] border-l-[1px] border-gray-300 transition-all ease-linear duration-200 delay-100
+                            ${options[2] && 'w-[85px] text-white bg-[#2c2c2c] rounded-lg shadow-[rgba(0,_0,_0,_0.24)_0px_3px_8px]'}`}>Dessert</button>
+                </div>
+                {/*<div className={'w-full h-10 px-10'}>
                     <ul className={'w-full h-full flex font-Index text-[13px] text-gray-400 gap-2'}>
                         <li onClick={() => showMenu(0)}
-                            className={`w-20 h-9 flex justify-center items-center cursor-pointer transition-all 
-                            ease-linear duration-200 hover:rounded-xl 
+                            className={`w-20 h-9 flex justify-center items-center cursor-pointer transition-all
+                            ease-linear duration-200 hover:rounded-xl
                             ${options[0] ? 'text-white bg-[#3c3c3c] rounded-xl' : 'rounded-[25px] border-[1px] border-gray-300'}`}>All
                         </li>
                         <li onClick={() => showMenu(1)}
-                            className={`w-20 h-9 flex justify-center items-center cursor-pointer transition-all 
-                            ease-linear duration-200 hover:rounded-xl 
-                            ${options[1] ? 'text-white bg-[#3c3c3c] rounded-xl' : 'rounded-[25px] border-[1px] border-gray-300'}`}>Coffee
+                            className={`w-20 h-9 flex justify-center items-center cursor-pointer transition-all
+                            ease-linear duration-200 hover:rounded-xl
+                            ${options[1] ? 'text-white bg-[#3c3c3c] rounded-xl' : 'rounded-[25px] border-[1px] border-gray-300 bg-gray-100'}`}>Coffee
                         </li>
                         <li onClick={() => showMenu(2)}
-                            className={`w-20 h-9 flex justify-center items-center cursor-pointer transition-all 
-                            ease-linear duration-200 hover:rounded-xl 
+                            className={`w-20 h-9 flex justify-center items-center cursor-pointer transition-all
+                            ease-linear duration-200 hover:rounded-xl
                             ${options[2] ? 'text-white bg-[#3c3c3c] rounded-xl' : 'rounded-[25px] border-[1px] border-gray-300'}`}>Dessert
                         </li>
                     </ul>
-                </div>
+                </div>*/}
 
                 {/*cards*/}
 
@@ -200,7 +210,7 @@ const Menu = (): JSX.Element => {
             </div>
 
             {/*Cart*/}
-            <div className={'w-[22%] h-full border-l-2 bg-white border-gray-200 px-4 pt-24'}>
+            <div className={'w-[22%] h-full border-l-2 bg-white border-gray-200 px-4 py-12'}>
                 <AddOrder ref={orderCartRef} showNotify={showNotify} resetOption={setOptions} selected={options}/>
             </div>
         </section>

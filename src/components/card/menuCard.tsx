@@ -2,7 +2,7 @@ import {HiMinusSmall} from "react-icons/hi2";
 import {useState} from "react";
 import 'react-toastify/dist/ReactToastify.css';
 import {IoAdd} from "react-icons/io5";
-import {animated, useSpring, useTransition} from "@react-spring/web";
+import {animated, useSpring} from "@react-spring/web";
 
 interface CoffeeData {
     _id: string;
@@ -49,7 +49,6 @@ const MenuCard = (props: Props): JSX.Element => {
     const [selected, setSelected] = useState([false, false])
     const [qty, setQty] = useState(0);
     const [added, setAdded] = useState(false);
-    const [isDelete, setIsDelete] = useState(false);
 
     const setSelectedItem = (index: number) => {
         const newArr = [false, false];
@@ -70,13 +69,17 @@ const MenuCard = (props: Props): JSX.Element => {
             return;
         }
         setAdded(!added);
+
         props.addForCart({
             _id: props.item._id,
             name: props.item.name,
+            // @ts-ignore
             size: props.cardType === "coffee" ? selected[0] ? "Small" : "Large" : props.item?.size,
             qty: qty,
             image: props.item.image,
+            // @ts-ignore
             total: props.cardType === "coffee" ? selected[0] ? (qty * props.item?.smallSize) : (qty * props.item?.largeSize) : eval(qty + props.item?.price),
+            // @ts-ignore
             unitPrice: props.cardType === "coffee" ? selected[0] ? props.item?.smallSize : props.item?.largeSize : props.item.price,
             maxQty: props.item.qty
         });
@@ -120,6 +123,7 @@ const MenuCard = (props: Props): JSX.Element => {
                 <div className={'w-full relative'}>
                     <h3 className={'text-[15px] text-gray-800 tracking-wide font-bold font-Index'}>{props.item.name}</h3>
                     <h3 className={'font-round absolute right-2 top-[-4px] text-[18px] text-[#FFA16C]'}>{
+                        // @ts-ignore
                         props.cardType === "coffee" ? props?.item?.largeSize : props.item.price
                     }
                         <span className={'pl-1 text-xs'}>USD</span>
@@ -145,8 +149,12 @@ const MenuCard = (props: Props): JSX.Element => {
                         :
                         <div className={'w-full flex items-center py-1'}>
                             <h3 className={'font-round mr-3 text-sm text-[#FFA16C]'}>Size</h3>
+
                             <span className={`px-4 py-1.5 font-Index rounded-2xl text-[12px] 
-                            mr-1 bg-[#3c3c3c] text-white`}>{props.item.size + " g"}
+                            mr-1 bg-[#3c3c3c] text-white`}>{
+                                // @ts-ignore
+                                 props.item.size + " g"
+                                 }
                             </span>
                         </div>
                 }

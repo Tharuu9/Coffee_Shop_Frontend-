@@ -2,6 +2,9 @@ import {forwardRef, useImperativeHandle, useReducer, useRef, useState} from "rea
 import {GrUpload} from "react-icons/gr";
 import CustomInput from "../../input/customInput.tsx";
 import axios from "axios";
+// @ts-ignore
+import Cookies from "js-cookie";
+import {useNavigate} from "react-router-dom";
 import Swal from "sweetalert2";
 
 
@@ -95,16 +98,19 @@ const formFieldSetReducer = (state: FormState, action: FormFieldSetAction): Form
 interface Props {
     onLoadAction: () => void;
     onSetCoffee: (coffee: Data) => void;
+    showTosty: (title: string, message: string) => void;
 }
 
 const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
 
     const [coffeeImg, setCoffeeImg] = useState<any>('');
     const [oldCoffeeImg, setOldCoffeeImg] = useState<string>('');
-    const fileInputRef = useRef();
+    const fileInputRef = useRef<any>();
     const [coffeeState, setCoffeeState] = useState<'Add' | 'Update'>("Add");
+    const navigate = useNavigate();
 
     const handleClick = (): void => {
+        // @ts-ignore
         fileInputRef.current?.click();
     };
 
@@ -151,9 +157,42 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
         }
     );
 
+    const getToken = ():string|null => {
+        const token = Cookies.get('token');
+        if (!token) {
+            Swal.fire({
+                title: "Login expire !",
+                text: "Please log in to continue!",
+                showCancelButton: false,
+                confirmButtonText: "OK!",
+                customClass: {
+                    title: 'swal-title',
+                    popup: 'swal-popup',
+                    confirmButton: 'swal-confirm',
+                    cancelButton: 'swal-cancel'
+                }
+            });
+            navigate('/login');
+            return null;
+        }else {
+            return token;
+        }
+    }
+
     const handleAddCoffee = () => {
+
+        if (coffeeImg === null || coffeeImg === '') {
+            props.showTosty('Warning', 'Image cannot be empty')
+            return;
+        }
+
+        const token = getToken();
+        if (token === null)
+            return;
+
         const config = {
             headers: {
+                'Authorization': token,
                 'Content-Type': 'multipart/form-data',
             }
         };
@@ -176,28 +215,35 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
             .then(res => {
                 clearAll();
                 props.onLoadAction();
-                Swal.fire({
+                props.showTosty('Success', res.data.message);
+                /*Swal.fire({
                     title: "Success !",
                     text: res.data.message,
                     icon: "success"
-                });
+                });*/
 
             })
             .catch(err => {
                 console.log(err)
-                Swal.fire({
-                    title: err.response.data.status,
-                    text: err.response.data.message,
-                    icon: 'error',
-                    confirmButtonText: 'Cool'
-                })
+                props.showTosty('Error', err.response.data.message);
+                /* Swal.fire({
+                     title: err.response.data.status,
+                     text: err.response.data.message,
+                     icon: 'error',
+                     confirmButtonText: 'Cool'
+                 })*/
             });
     }
 
     const handleUpdateCoffee = () => {
 
+        const token = getToken();
+        if (token === null)
+            return;
+
         const config = {
             headers: {
+                'Authorization': token,
                 'Content-Type': 'multipart/form-data',
             }
         };
@@ -219,27 +265,34 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
             .then(res => {
                 clearAll();
                 props.onLoadAction();
-                Swal.fire({
+                props.showTosty('Success', res.data.message);
+                /*Swal.fire({
                     title: "Success !",
                     text: res.data.message,
                     icon: "success"
-                });
+                });*/
             })
             .catch(err => {
                 console.log(err)
-                Swal.fire({
+                props.showTosty('Error', err.response.data.message);
+                /*Swal.fire({
                     title: err.response.data.status,
                     text: err.response.data.message,
                     icon: 'error',
                     confirmButtonText: 'Cool'
-                })
+                })*/
             });
     }
 
     const handleUpdateCoffeeWithoutImg = () => {
 
+        const token = getToken();
+        if (token === null)
+            return;
+
         const config = {
             headers: {
+                'Authorization': token,
                 'Content-Type': 'application/json',
             }
         };
@@ -257,36 +310,54 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
             .then(res => {
                 clearAll();
                 props.onLoadAction();
-                Swal.fire({
+                props.showTosty('Success', res.data.message);
+                /*Swal.fire({
                     title: "Success !",
                     text: res.data.message,
                     icon: "success"
-                });
+                });*/
             })
             .catch(err => {
                 console.log(err)
-                Swal.fire({
+                props.showTosty('Error', err.response.data.message);
+                /*Swal.fire({
                     title: err.response.data.status,
                     text: err.response.data.message,
                     icon: 'error',
-                    confirmButtonText: 'Cool'
-                })
+                    confirmButtonText: 'Ok !'
+                })*/
             });
     }
 
     const handleValidation = () => {
 
-        if (state.coffeeNameError === null && state.descriptionError === null && state.largeSizeError ===
-            null && state.smallSizeError === null && state.qtyError === null) {
-
-            if (coffeeState === "Add") {
-                handleAddCoffee();
+        if (state.coffeeName === null || state.coffeeName === '') {
+            props.showTosty('Warning', 'Name cannot be empty')
+            return;
+        }
+        if (state.description === null || state.description === '') {
+            props.showTosty('Warning', 'Description cannot be empty')
+            return;
+        }
+        if (state.largeSize === null || state.largeSize === '') {
+            props.showTosty('Warning', 'Large size cannot be empty')
+            return;
+        }
+        if (state.smallSize === null || state.smallSize === '') {
+            props.showTosty('Warning', 'Small size cannot be empty')
+            return;
+        }
+        if (state.qty === null || state.qty === '') {
+            props.showTosty('Warning', 'Quantity cannot be empty')
+            return;
+        }
+        if (coffeeState === "Add") {
+            handleAddCoffee();
+        } else {
+            if (coffeeImg) {
+                handleUpdateCoffee();
             } else {
-                if (coffeeImg) {
-                    handleUpdateCoffee();
-                } else {
-                    handleUpdateCoffeeWithoutImg();
-                }
+                handleUpdateCoffeeWithoutImg();
             }
         }
     }
@@ -306,7 +377,7 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
 
     return (
         <section className={'w-full px-2 pt-1'}>
-            <div className={'w-full h-[20vh] my-3'}>
+            <div className={'w-full h-[20vh] mt-3 mb-8'}>
                 <input type={"file"} className={'hidden'} ref={fileInputRef} onChange={handleFileChange}/>
                 {
                     coffeeImg || oldCoffeeImg ?
@@ -329,7 +400,6 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
                     type={'text'}
                     name={'Coffee'}
                     placeholder={'Cappucino...'}
-                    errorMsg={state.coffeeNameError}
                     callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
 
                 <CustomInput
@@ -337,7 +407,6 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
                     type={'text'}
                     name={'Desc'}
                     placeholder={'Description for flavours.. '}
-                    errorMsg={state.descriptionError}
                     callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
 
                 <div className={'row'}>
@@ -346,8 +415,7 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
                             value={state.largeSize}
                             type={'number'}
                             name={'Large size'}
-                            placeholder={'00.00'}
-                            errorMsg={state.largeSizeError}
+                            placeholder={'$6.5'}
                             callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
                     </div>
                     <div className={'col-md-6'}>
@@ -355,40 +423,30 @@ const AddCoffee = forwardRef((props: Props, ref): JSX.Element => {
                             value={state.smallSize}
                             type={'number'}
                             name={'Small size'}
-                            placeholder={'00.00'}
-                            errorMsg={state.smallSizeError}
+                            placeholder={'$ 5'}
                             callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
                     </div>
                 </div>
-                <CustomInput
-                    value={state.qty}
-                    type={'number'}
-                    name={'Qty'}
-                    placeholder={'Qty on hand'}
-                    errorMsg={state.qtyError}
-                    callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
+                <div className={'col-md-12'}>
+                    <CustomInput
+                        value={state.qty}
+                        type={'number'}
+                        name={'Quantity on hand'}
+                        placeholder={'250'}
+                        callBack={(value, name) => dispatch({formFieldName: name, formFieldValue: value})}/>
+                </div>
+
                 <div className={'w-full flex items-center justify-content-evenly py-4 font-cde text-[13px]'}>
                     <button
                         onClick={() => clearAll()}
-                        className={`py-2 w-28 transition-all duration-200 hover: active:text-white active:bg-gray-700 hover:bg-gray-300 bg-gray-200 text-gray-500 rounded`}>Dismiss All
+                        className={`py-2 w-28 transition-all duration-200 hover: active:text-white active:bg-gray-700 hover:bg-gray-300 bg-gray-200 text-gray-500 rounded`}>Dismiss
+                        All
                     </button>
                     <button
                         onClick={handleValidation}
                         className={`py-2 w-28 transition-all duration-200 bg-[#454545] rounded hover:bg-[#2c2c2c] hover:text-white text-white active:bg-[#fc4f13]`}>{coffeeState}
                     </button>
                 </div>
-                {/*<button
-                    onClick={handleValidation}
-                    className={`w-full h-[40px] font-round text-sm bg-[#3C3C3C] ` +
-                        `hover:bg-[#5d5d5d] text-white rounded-full my-2 ` +
-                        `active:bg-[#262626]`}>{coffeeState}
-                </button>
-                <button
-                    onClick={clearAll}
-                    className={`w-full h-[38px] font-round text-sm  ` +
-                        ` border-[1px] border-gray-400 rounded-full  ` +
-                        `active:bg-[#b0b0b0]`}>Clear All
-                </button>*/}
             </div>
         </section>
     );

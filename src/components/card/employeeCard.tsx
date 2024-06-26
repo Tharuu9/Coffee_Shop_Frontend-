@@ -1,11 +1,12 @@
 import Swal from "sweetalert2";
 import axios from "axios";
 import {useSpring, animated} from "@react-spring/web";
-import React, {useRef, useState} from "react";
-import {DropdownItem, DropdownMenu, DropdownToggle, UncontrolledDropdown} from "reactstrap";
-import {Edit, MoreVertical, Trash} from "react-feather";
+import {useRef, useState} from "react";
+import {Edit, Trash} from "react-feather";
 import {FiMoreVertical} from "react-icons/fi";
-import {TiDocumentText} from "react-icons/ti";
+// @ts-ignore
+import Cookies from "js-cookie";
+import {useNavigate} from "react-router-dom";
 
 interface Data {
     _id: string;
@@ -25,47 +26,32 @@ interface Props {
     age: number;
     contact: string;
     image: string;
-
-    setEmployee(employee: Data): void;
-
-    handleOnLoad(): void;
+    setEmployee:(employee: Data) => void;
+    handleOnLoad: () => void;
+    showTosty: (title: string, message: string) => void;
 }
 
 
 const EmployeeCard = (props: Props): JSX.Element => {
 
     const [openOption, setOpenOption] = useState(false);
-    const iconRef = useRef();
+    const iconRef = useRef<any>();
+    const navigate = useNavigate();
 
     const handleGetEmployeeById = (_id: string): void => {
 
-        axios.get(`http://localhost:8080/employee/getById/${_id}`)
-            .then(response => {
-                props.setEmployee(response.data.data);
-            })
-            .catch(err => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Something went wrong',
-                    icon: 'error',
-                    confirmButtonText: 'Cool'
-                });
-                console.log(err)
-
-            });
-    }
-
-    const handleDeleteEmployee = (_id: string): void => {
-
         Swal.fire({
             title: "Are you sure?",
-            text: "Are you sure do you to delete this Employee !",
-            icon: "question",
+            text: "Are you sure do you to Edit this Employee!",
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!"
-
+            confirmButtonText: "Yes, edit it!",
+            cancelButtonText: "No, cancel it!",
+            customClass: {
+                title: 'swal-title',
+                popup: 'swal-popup',
+                confirmButton: 'swal-update',
+                cancelButton: 'swal-cancel'
+            }
         }).then((result) => {
             if (result.isConfirmed) {
 
@@ -74,25 +60,55 @@ const EmployeeCard = (props: Props): JSX.Element => {
                         'Authorization': Cookies.get('token')
                     }
                 };*/
-                axios.delete(`http://localhost:8080/employee/${_id}`, /*config*/)
+                axios.get(`http://localhost:8080/employee/getById/${_id}`)
+                    .then(response => {
+                        props.setEmployee(response.data.data);
+                    })
+                    .catch(err => {
+                        props.showTosty('Error', err.response.data.message);
+                        console.log(err)
+                    });
+            }
+        });
+    }
+
+    const handleDeleteEmployee = (_id: string): void => {
+
+        const token = getToken();
+        if (token === null)
+            return;
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "Are you sure do you to delete this Employee !",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete it!",
+            cancelButtonText: "No, saved it!",
+            customClass: {
+                title: 'swal-title',
+                popup: 'swal-popup',
+                confirmButton: 'swal-confirm',
+                cancelButton: 'swal-cancel'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                const config = {
+                    headers: {
+                        'Authorization': token
+                    }
+                };
+                axios.delete(`http://localhost:8080/employee/${_id}`, config)
 
                     .then(res => {
-                        Swal.fire({
-                            title: "Deleted!",
-                            text: "Your employee has been deleted.",
-                            icon: "success"
-                        });
+                        props.showTosty('Success', "Deleted successful");
                         props.handleOnLoad();
                         console.log(res)
                     })
                     .catch(err => {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: 'Something went wrong',
-                            icon: 'error',
-                            confirmButtonText: 'Cool'
-                        })
-                        console.log(err.message)
+                        console.log(err)
+                        props.showTosty('Error', err.response.data);
+                        console.log(err.response.data)
                     });
             }
         });
@@ -107,8 +123,31 @@ const EmployeeCard = (props: Props): JSX.Element => {
         }
     });
 
+    const getToken = ():string|null => {
+        const token = Cookies.get('token');
+        if (!token) {
+            Swal.fire({
+                title: "Login expire !",
+                text: "Please log in to continue!",
+                showCancelButton: false,
+                confirmButtonText: "OK!",
+                customClass: {
+                    title: 'swal-title',
+                    popup: 'swal-popup',
+                    confirmButton: 'swal-confirm',
+                    cancelButton: 'swal-cancel'
+                }
+            });
+            navigate('/login');
+            return null;
+        }else {
+            return token;
+        }
+    }
+
     const handleWindowClick = (e: any): void => {
         if (openOption) {
+            // @ts-ignore
             if (iconRef.current && !iconRef.current.contains(e.target)) {
                 setOpenOption(false);
             }
@@ -118,7 +157,7 @@ const EmployeeCard = (props: Props): JSX.Element => {
 
     return (
         <animated.div style={styles}
-                      className={'w-full relative rounded-[5px] flex bg-white text-[13px] font-[500] items-center h-16 px-5 border-b-[1px] border-gray-200 cursor-default'}>
+                      className={'w-full relative rounded-[5px] flex bg-white text-[13px] font-[500] items-center h-16 px-5 py-2 border-b-[1px] border-gray-200 cursor-default'}>
             <div className={'flex h-full items-center'}>
                 <img src={props.image} alt="profile"
                      className={'w-11 h-11 rounded-full object-cover mr-3'}/>
@@ -148,22 +187,6 @@ const EmployeeCard = (props: Props): JSX.Element => {
                     <Trash className='text-lg' size={16}/> <span className='align-middle pt-1'>Delete</span>
                 </span>
                 </div>
-                {/* <button
-                    onClick={() => handleDeleteEmployee(props._id)}
-                    type={'button'}
-                    className={'text-[13px] font-normal mx-1 px-4 my-2 py-1.5 text-center border-[1px] ' +
-                        'border-red-400 rounded-[6px] hover:bg-red-500 transition-all duration-100 ease-linear ' +
-                        'active:bg-blue-600  cursor-default text-red-500 hover:text-white'}>
-                    Remove
-                </button>
-                <button
-                    onClick={() => handleGetEmployeeById(props._id)}
-                    type={'button'}
-                    className={'text-[13px] font-normal mx-1 px-4 my-2 py-1.5 text-center text-white bg-gray-400  ' +
-                        'rounded-[6px]  hover:bg-blue-500 transition-all duration-100 ease-linear ' +
-                        'active:bg-blue-600  cursor-default'}>
-                    Update
-                </button>*/}
             </div>
         </animated.div>
     );

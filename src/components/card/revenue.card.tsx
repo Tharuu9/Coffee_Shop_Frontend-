@@ -1,7 +1,7 @@
 interface Props{
     color:string;
     text:string;
-    value:string;
+    value:number | string;
     icon:any;
 }
 
